@@ -1,0 +1,74 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Parameters": {
+        "S3BucketName": {
+            "Description": "Enter the name of the S3 bucket you want to create",
+            "Type": "String"
+        }
+    },
+    "Resources": {
+        "EtcdBackup": {
+            "Type": "AWS::S3::Bucket",
+            "Properties": {
+                "AccessControl": "Private",
+                "BucketName": {
+                    "Ref": "S3BucketName"
+                }
+            }
+        },
+        "EtcdBackupUser": {
+            "Type": "AWS::IAM::User",
+            "Properties": {
+                "Policies": [{
+                    "PolicyName": "EtcdBackup",
+                    "PolicyDocument": {
+                        "Version": "2012-10-17",
+                        "Statement": [{
+                            "Action": [
+                                "s3:*"
+                            ],
+                            "Effect": "Allow",
+                            "Resource": [{
+                                "Fn::Join": ["", ["arn:aws:s3:::", {
+                                    "Ref": "EtcdBackup"
+                                }]]
+                            }, {
+                                "Fn::Join": ["", ["arn:aws:s3:::", {
+                                    "Ref": "EtcdBackup"
+                                }, "/*"]]
+                            }]
+                        }]
+                    }
+                }]
+            }
+        },
+        "EtcdBackupAccessKey": {
+            "Type": "AWS::IAM::AccessKey",
+            "Properties": {
+                "UserName": {
+                    "Ref": "EtcdBackupUser"
+                }
+            }
+        }
+    },
+    "Outputs": {
+        "EtcdBackupBucketName": {
+            "Value": {
+                "Ref": "EtcdBackup"
+            }
+        },
+        "EtcdBackupAccessKeyId": {
+            "Value": {
+                "Ref": "EtcdBackupAccessKey"
+            }
+        },
+        "EtcdBackupAccessKeySecret": {
+            "Value": {
+                "Fn::GetAtt": [
+                    "EtcdBackupAccessKey",
+                    "SecretAccessKey"
+                ]
+            }
+        }
+    }
+}
